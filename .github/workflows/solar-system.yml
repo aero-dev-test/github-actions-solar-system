@@ -1,6 +1,6 @@
 name: Solar System Workflow
 
-on: 
+on:
   workflow_dispatch:
   push:
     branches:
@@ -8,52 +8,65 @@ on:
       - 'feature/*'
 
 env:
-    MONGO_URI: 'mongodb+srv://supercluster.d83jj.mongodb.net/superData'
-    MONGO_USERNAME: superuser
-    MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+  MONGO_URI: 'mongodb+srv://supercluster.d83jj.mongodb.net/superData'
+  MONGO_USERNAME: superuser
+  MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
 
 jobs:
-    unit-testing:
-        name: Unit Testing
-        runs-on: ubuntu-latest
-        steps:
-        - name: Checkout Repository
-          uses: actions/checkout@v4
+  unit-testing:
+    name: Unit Testing
+    runs-on: ubuntu-latest
 
-        - name: Setup NodeJS Version
-          uses: actions/setup-node@v4
-          with:
-            node-version: 20
-    
-        - name: Install Dependencies
-          run: npm install
-    
-        - name: Unit Testing
-          run: npm test
-          
-        - name: Archive Test Result
-          if: always()
-          uses: actions/upload-artifact@v4
-          with:
-            name: Mocha-Test-Result
-            path: test-results.xml
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
 
-    code-coverage:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v4
+      - name: Setup NodeJS Version
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
 
-        - uses: actions/setup-node@v4
-          with:
-            node-version: 18
+      - name: Cache NPM dependencies
+        uses: actions/cache@v5
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 
-        - run: npm install
+      - name: Install Dependencies
+        run: npm install
 
-        - run: npm run coverage
-          continue-on-error: true
+      - name: Unit Testing
+        run: npm test
 
-        - uses: actions/upload-artifact@v4
-          with:
-            name: Code-Coverage-Result
-            path: coverage
-            retention-days: 5
+      - name: Archive Test Result
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Mocha-Test-Result
+          path: test-results.xml
+
+  code-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup NodeJS Version
+        uses: actions/setup-node@v7
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Code Coverage
+        run: npm run coverage
+        continue-on-error: true
+
+      - name: Upload Code Coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: Code-Coverage-Result
+          path: coverage
+          retention-days: 5
